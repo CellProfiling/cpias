@@ -23,8 +23,9 @@ setup(
     download_url=DOWNLOAD_URL,
     packages=find_packages(exclude=["contrib", "docs", "tests*"]),
     python_requires=">=3.7",
-    install_requires=[],
+    install_requires=["voluptuous"],
     include_package_data=True,
+    entry_points={"cpias.commands": ["hello = cpias.commands.hello"]},
     license="Apache-2.0",
     zip_safe=False,
     classifiers=[
