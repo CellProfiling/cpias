@@ -68,14 +68,14 @@ class CPIAServer:
                 break
             msg = Message.decode(data.decode())
             if not msg:
-                # TODO: Send invalid message message.
+                # TODO: Send invalid message message.  # pylint: disable=fixme
                 continue
 
             cmd_func = self.commands.get(msg.command)
 
             if cmd_func is None:
                 LOGGER.warning("Received unknown command %s from %s", msg.command, addr)
-                # TODO: Send unknown command message.
+                # TODO: Send unknown command message.  # pylint: disable=fixme
                 continue
 
             LOGGER.debug("Received %s from %s", msg, addr)
