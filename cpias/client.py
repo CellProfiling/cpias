@@ -9,15 +9,12 @@ async def tcp_echo_client(message: str) -> None:
     version_msg = data.decode()
     print(f"Version message: {version_msg}")
 
-    for _ in range(2):
-        print(f"Send: {message!r}")
-        writer.write(message.encode())
-        await writer.drain()
+    print(f"Send: {message!r}")
+    writer.write(message.encode())
+    await writer.drain()
 
-        data = await reader.readline()
-        print(f"Received: {data.decode()!r}")
-
-        await asyncio.sleep(2)
+    data = await reader.readline()
+    print(f"Received: {data.decode()!r}")
 
     print("Closing the connection")
     writer.close()
@@ -28,6 +25,26 @@ if __name__ == "__main__":
     asyncio.run(
         tcp_echo_client(
             '{"cli": "client-1", "cmd": "hello", "dta": {"planet": "world"}}\n'
+        ),
+        debug=True,
+    )
+    asyncio.run(
+        tcp_echo_client(
+            '{"cli": "client-1", "cmd": "hello_slow", "dta": {"planet": "slow"}}\n'
+        ),
+        debug=True,
+    )
+    asyncio.run(
+        tcp_echo_client(
+            '{"cli": "client-1", "cmd": "hello_persistent", '
+            '"dta": {"planet": "Mars"}}\n'
+        ),
+        debug=True,
+    )
+    asyncio.run(
+        tcp_echo_client(
+            '{"cli": "client-1", "cmd": "hello_process", '
+            '"dta": {"planet": "Neptune"}}\n'
         ),
         debug=True,
     )

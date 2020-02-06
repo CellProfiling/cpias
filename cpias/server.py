@@ -1,7 +1,8 @@
 """Provide an image analysis server."""
 import asyncio
+import concurrent.futures
 import logging
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Coroutine, Dict, Optional
 
 from .commands import get_commands
 from .const import API_VERSION, LOGGER, VERSION
@@ -11,6 +12,8 @@ from .message import Message
 class CPIAServer:
     """Represent an image analysis server."""
 
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, host: str = "localhost", port: int = 8555) -> None:
         """Set up server instance."""
         self.host = host
@@ -18,6 +21,10 @@ class CPIAServer:
         self.server: Optional[asyncio.AbstractServer] = None
         self.serv_task: Optional[asyncio.Task] = None
         self.commands: Dict[str, Callable] = {}
+        self._on_stop_callbacks: list = []
+        self._pending_tasks: list = []
+        self._track_tasks = False
+        self.store: dict = {}
 
     async def start(self) -> None:
         """Start server."""
@@ -38,9 +45,20 @@ class CPIAServer:
 
     async def stop(self) -> None:
         """Stop the server."""
+        self._track_tasks = True
+        for stop_callback in self._on_stop_callbacks:
+            stop_callback()
+
+        self._on_stop_callbacks.clear()
+        await self.wait_for_tasks()
+
         if self.serv_task is not None:
             self.serv_task.cancel()
             await asyncio.sleep(0)  # Let the event loop cancel the task.
+
+    def on_stop(self, callback: Callable) -> None:
+        """Register a callback that should be called on server stop."""
+        self._on_stop_callbacks.append(callback)
 
     async def handle_conn(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -87,6 +105,55 @@ class CPIAServer:
             data = reply.encode().encode()
             writer.write(data)
             await writer.drain()
+
+    def add_executor_job(self, func: Callable, *args: Any) -> Coroutine:
+        """Schedule a function to be run in the thread pool.
+
+        Return a task.
+        """
+        loop = asyncio.get_running_loop()
+        task = loop.run_in_executor(None, func, *args)
+        if self._track_tasks:
+            self._pending_tasks.append(task)
+
+        return task
+
+    async def run_process_job(self, func: Callable, *args: Any) -> Any:
+        """Run a job in the process pool."""
+        loop = asyncio.get_running_loop()
+
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            task = loop.run_in_executor(pool, func, *args)
+            if self._track_tasks:
+                self._pending_tasks.append(task)
+            result = await task
+
+        return result
+
+    def create_task(self, coro: Coroutine) -> asyncio.Task:
+        """Schedule a coroutine on the event loop.
+
+        Use this helper to make sure the task is cancelled on server stop.
+        Return a task.
+        """
+        task = asyncio.create_task(coro)
+
+        if self._track_tasks:
+            self._pending_tasks.append(task)
+
+        return task
+
+    async def wait_for_tasks(self) -> None:
+        """Wait for all pending tasks."""
+        await asyncio.sleep(0)
+        while self._pending_tasks:
+            LOGGER.debug("Waiting for pending tasks")
+            pending = [task for task in self._pending_tasks if not task.done()]
+            self._pending_tasks.clear()
+            if pending:
+                await asyncio.wait(pending)
+            else:
+                await asyncio.sleep(0)
 
 
 def main() -> None:

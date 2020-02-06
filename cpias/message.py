@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import Optional
+from typing import Optional, cast
 
 from .const import LOGGER
 
@@ -16,6 +16,13 @@ class Message:
         self.client = client
         self.command = command
         self.data = data
+        self.copy = self.__copy__
+
+    def __copy__(self) -> Message:
+        """Copy message."""
+        msg_data = self.encode()
+        new_msg = cast(Message, self.decode(msg_data))
+        return new_msg
 
     def __repr__(self) -> str:
         """Return the representation."""
