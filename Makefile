@@ -36,13 +36,13 @@ lint:
 	tox -e lint
 
 test:
-	pytest -v test/
+	pytest -v tests/
 
 test-all:
 	tox
 
 coverage:
-	pytest -v --cov-report term-missing --cov=cpias test/
+	pytest -v --cov-report term-missing --cov=cpias tests/
 
 release: clean
 	python setup.py sdist bdist_wheel
