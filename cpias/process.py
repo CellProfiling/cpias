@@ -43,7 +43,7 @@ def create_process(
         try:
             return await server.add_executor_job(parent_conn.recv)
         except EOFError as exc:
-            LOGGER.info("Nothing more to receive")
+            LOGGER.debug("Nothing more to receive")
             raise ReceiveError from exc
 
     async def async_send(data: Dict[Any, Any]) -> None:

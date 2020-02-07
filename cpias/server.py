@@ -40,11 +40,12 @@ class CPIAServer:
 
         async with server:
             self.serv_task = asyncio.create_task(server.serve_forever())
-            LOGGER.debug("Serving at %s:%s", self.host, self.port)
+            LOGGER.info("Serving at %s:%s", self.host, self.port)
             await self.serv_task
 
     async def stop(self) -> None:
         """Stop the server."""
+        LOGGER.info("Server shutting down")
         self._track_tasks = True
         for stop_callback in self._on_stop_callbacks:
             stop_callback()
@@ -71,7 +72,7 @@ class CPIAServer:
 
         await self.handle_comm(reader, writer)
 
-        LOGGER.info("Closing the connection")
+        LOGGER.debug("Closing the connection")
         writer.close()
         await writer.wait_closed()
 
