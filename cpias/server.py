@@ -61,6 +61,10 @@ class CPIAServer:
         """Register a callback that should be called on server stop."""
         self._on_stop_callbacks.append(callback)
 
+    def register_command(self, command_name: str, command_func: Callable) -> None:
+        """Register a command function."""
+        self.commands[command_name] = command_func
+
     async def handle_conn(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:

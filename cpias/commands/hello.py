@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 def register_command(server: "CPIAServer") -> None:
     """Register the hello command."""
-    server.commands["hello"] = hello
-    server.commands["hello_slow"] = hello_slow
-    server.commands["hello_persistent"] = hello_persistent
-    server.commands["hello_process"] = hello_process
+    server.register_command("hello", hello)
+    server.register_command("hello_slow", hello_slow)
+    server.register_command("hello_persistent", hello_persistent)
+    server.register_command("hello_process", hello_process)
 
 
 @validate({"planet": str})
